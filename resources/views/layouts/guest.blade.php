@@ -21,6 +21,7 @@
                     <x-application-logo class="w-20 h-20 fill-current text-gray-500" />
                 </a>
                 -->
+                
                 <img src="{{URL::asset('/image/xu-logo.jpg')}}" alt="XU LOGO" height="200" width="200">
             </div>
 
