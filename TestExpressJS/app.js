@@ -1,12 +1,10 @@
 const express = require('express');
-const sqlite3 = require('sqlite3').verbose();
+const sqlite3 = require('sqlite3').verbose(); 
 const bcrypt = require('bcrypt');
-const jwt = require('jsonwebtoken');
 
 const app = express();
 const db = new sqlite3.Database('data.db');
 const PORT = 3000;
-const SECRET_KEY = "your_secret_key";
 
 app.use(express.json());
 
@@ -51,7 +49,6 @@ app.post('/login', (req, res) => {
             return res.status(400).json({ message: "Invalid username or password" });
         }
 
-        const token = jwt.sign({ id: user.id, username: user.username }, SECRET_KEY, { expiresIn: '1h' });
         res.json({ message: "Login successful", token });
     });
 });
@@ -72,5 +69,5 @@ app.delete('/delete', (req, res) => {
 });
 
 app.listen(PORT, () => {
-    console.log(`Server running on http://localhost:${PORT}`);
+    console.log(`Server running on http://localhost:3000`);
 });
