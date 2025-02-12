@@ -1,10 +1,9 @@
 const express = require('express');
 const sqlite3 = require('sqlite3').verbose(); 
-const bcrypt = require('bcrypt');
 
 const app = express();
 const db = new sqlite3.Database('data.db');
-const PORT = 3000;
+const PORT = 4000;
 
 app.use(express.json());
 
@@ -15,16 +14,19 @@ db.run(`CREATE TABLE IF NOT EXISTS users (
     password TEXT NOT NULL
 )`);
 
+// Root endpoint
+app.get('/', (req, res) => {
+    res.send('Welcome to the API');
+});
+
 // Register user
-app.post('/register', async (req, res) => {
+app.post('/register', (req, res) => {
     const { username, password } = req.body;
     if (!username || !password) {
         return res.status(400).json({ message: "Username and password are required" });
     }
 
-    const hashedPassword = await bcrypt.hash(password, 10);
-    
-    db.run(`INSERT INTO users (username, password) VALUES (?, ?)`, [username, hashedPassword], function(err) {
+    db.run(`INSERT INTO users (username, password) VALUES (?, ?)`, [username, password], function(err) {
         if (err) {
             return res.status(400).json({ message: "User already exists" });
         }
@@ -39,17 +41,11 @@ app.post('/login', (req, res) => {
         return res.status(400).json({ message: "Username and password are required" });
     }
 
-    db.get(`SELECT * FROM users WHERE username = ?`, [username], async (err, user) => {
+    db.get(`SELECT * FROM users WHERE username = ? AND password = ?`, [username, password], (err, user) => {
         if (err || !user) {
             return res.status(400).json({ message: "Invalid username or password" });
         }
-        
-        const validPassword = await bcrypt.compare(password, user.password);
-        if (!validPassword) {
-            return res.status(400).json({ message: "Invalid username or password" });
-        }
-
-        res.json({ message: "Login successful", token });
+        res.json({ message: "Login successful" });
     });
 });
 
@@ -69,5 +65,5 @@ app.delete('/delete', (req, res) => {
 });
 
 app.listen(PORT, () => {
-    console.log(`Server running on http://localhost:3000`);
+    console.log(`Server running on http://localhost:${PORT}`);
 });
