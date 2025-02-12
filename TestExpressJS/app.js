@@ -1,7 +1,23 @@
 const express = require('express');
 const app = express();
 const path = require('path');  
+const sqlite3 = require('sqlite3').verbose();
+let sql;
 
+const db = new sqlite3.Database('data.db', sqlite3.OPEN_READWRITE, (err) => {
+    if (err) {
+        console.error(err.message);
+    }
+    console.log('Connected to the database.');
+});
+sql = `CREATE TABLE IF NOT EXISTS users (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    username TEXT NOT NULL,
+    email TEXT NOT NULL,
+    password TEXT NOT NULL
+)`;
+
+db.run("DROP TABLE IF EXISTS users");
 
 app.use(express.static('Public'));
 
