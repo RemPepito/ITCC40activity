@@ -1,46 +1,76 @@
 const express = require('express');
-const app = express();
-const path = require('path');  
 const sqlite3 = require('sqlite3').verbose();
-let sql;
+const bcrypt = require('bcrypt');
+const jwt = require('jsonwebtoken');
 
-const db = new sqlite3.Database('data.db', sqlite3.OPEN_READWRITE, (err) => {
-    if (err) {
-        console.error(err.message);
-    }
-    console.log('Connected to the database.');
-});
-sql = `CREATE TABLE IF NOT EXISTS users (
+const app = express();
+const db = new sqlite3.Database('data.db');
+const PORT = 3000;
+const SECRET_KEY = "your_secret_key";
+
+app.use(express.json());
+
+// Create users table if not exists
+db.run(`CREATE TABLE IF NOT EXISTS users (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    username TEXT NOT NULL,
-    email TEXT NOT NULL,
+    username TEXT UNIQUE NOT NULL,
     password TEXT NOT NULL
-)`;
+)`);
 
-db.run("DROP TABLE IF EXISTS users");
+// Register user
+app.post('/register', async (req, res) => {
+    const { username, password } = req.body;
+    if (!username || !password) {
+        return res.status(400).json({ message: "Username and password are required" });
+    }
 
-app.use(express.static('Public'));
-
-// Main landing page route
-app.get('/', (req, res) => {
-
-    res.sendFile(path.join(__dirname, 'public', 'Index.html'));
+    const hashedPassword = await bcrypt.hash(password, 10);
+    
+    db.run(`INSERT INTO users (username, password) VALUES (?, ?)`, [username, hashedPassword], function(err) {
+        if (err) {
+            return res.status(400).json({ message: "User already exists" });
+        }
+        res.status(201).json({ message: "User registered successfully" });
+    });
 });
 
-// Route for Login Page
-app.get('/login', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'login.html'));
+// Login user
+app.post('/login', (req, res) => {
+    const { username, password } = req.body;
+    if (!username || !password) {
+        return res.status(400).json({ message: "Username and password are required" });
+    }
+
+    db.get(`SELECT * FROM users WHERE username = ?`, [username], async (err, user) => {
+        if (err || !user) {
+            return res.status(400).json({ message: "Invalid username or password" });
+        }
+        
+        const validPassword = await bcrypt.compare(password, user.password);
+        if (!validPassword) {
+            return res.status(400).json({ message: "Invalid username or password" });
+        }
+
+        const token = jwt.sign({ id: user.id, username: user.username }, SECRET_KEY, { expiresIn: '1h' });
+        res.json({ message: "Login successful", token });
+    });
 });
 
-app.get('/register', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'Register.html'));
+// Delete user
+app.delete('/delete', (req, res) => {
+    const { username } = req.body;
+    if (!username) {
+        return res.status(400).json({ message: "Username is required" });
+    }
+
+    db.run(`DELETE FROM users WHERE username = ?`, [username], function(err) {
+        if (err || this.changes === 0) {
+            return res.status(400).json({ message: "User not found" });
+        }
+        res.json({ message: "User deleted successfully" });
+    });
 });
 
-app.get('/delete', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'Delete.html'));
-});
-
-
-app.listen(4000, () => {
-    console.log('Server is running on port 4000');
+app.listen(PORT, () => {
+    console.log(`Server running on http://localhost:${PORT}`);
 });
