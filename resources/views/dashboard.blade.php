@@ -18,10 +18,11 @@
     <div class>
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-2">
             <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg">
-                <div class="p-6 text-gray-900 dark:text-gray-100">
+                <div class="p-6 text-gray-900 dark:text-gray-100 text-center">
 
-                    <p>Can add here?</p>
-                <!-- @UyguangcoFrancisKing add here -->
+                    <h3 class="text-lg font-semibold">User Information</h3>
+                    <p><b>Username:</b> {{ Auth::user()->name }}</p>
+                    <p><b>Email:</b> {{ Auth::user()->email }}</p>
 
                 </div>
             </div>
