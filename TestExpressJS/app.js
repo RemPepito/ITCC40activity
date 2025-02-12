@@ -1,11 +1,16 @@
 const express = require('express');
-const sqlite3 = require('sqlite3').verbose(); 
+const sqlite3 = require('sqlite3').verbose();
+const path = require('path');
 
 const app = express();
 const db = new sqlite3.Database('data.db');
-const PORT = 4000;
+const PORT = 3000;
 
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+// Serve static files from "public" directory
+app.use(express.static(path.join(__dirname, 'public')));
 
 // Create users table if not exists
 db.run(`CREATE TABLE IF NOT EXISTS users (
@@ -14,9 +19,21 @@ db.run(`CREATE TABLE IF NOT EXISTS users (
     password TEXT NOT NULL
 )`);
 
-// Root endpoint
+// Routes to serve HTML pages
 app.get('/', (req, res) => {
-    res.send('Welcome to the API');
+    res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+
+app.get('/register', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'register.html'));
+});
+
+app.get('/login', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'login.html'));
+});
+
+app.get('/delete', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'delete.html'));
 });
 
 // Register user
@@ -50,7 +67,7 @@ app.post('/login', (req, res) => {
 });
 
 // Delete user
-app.delete('/delete', (req, res) => {
+app.post('/delete', (req, res) => {
     const { username } = req.body;
     if (!username) {
         return res.status(400).json({ message: "Username is required" });
