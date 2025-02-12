@@ -67,13 +67,13 @@ app.post('/login', (req, res) => {
 });
 
 // Delete user
-app.post('/delete', (req, res) => {
+app.post('/delete-account', (req, res) => {
     const { username } = req.body;
     if (!username) {
         return res.status(400).json({ message: "Username is required" });
     }
 
-    db.run(`DELETE FROM users WHERE username = ?`, [username], function(err) {
+    db.get(`DELETE FROM users WHERE username = ?`, [username], function(err) {
         if (err || this.changes === 0) {
             return res.status(400).json({ message: "User not found" });
         }
