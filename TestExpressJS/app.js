@@ -32,8 +32,18 @@ app.get('/login', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'login.html'));
 });
 
-app.get('/delete', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'delete.html'));
+app.get('/dashboard', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'dashboard.html'));
+});
+
+// Get all users
+app.get('/users', (req, res) => {
+    db.all(`SELECT id, username FROM users`, [], (err, users) => {
+        if (err) {
+            return res.status(500).json({ message: "Error fetching users" });
+        }
+        res.json(users);
+    });
 });
 
 // Register user
@@ -47,7 +57,7 @@ app.post('/register', (req, res) => {
         if (err) {
             return res.status(400).json({ message: "User already exists" });
         }
-        res.status(201).json({ message: "User registered successfully" });
+        res.status(201).json({ message: "User registered successfully", username: username });
     });
 });
 
@@ -62,7 +72,50 @@ app.post('/login', (req, res) => {
         if (err || !user) {
             return res.status(400).json({ message: "Invalid username or password" });
         }
-        res.json({ message: "Login successful" });
+        res.json({ message: "Login successful", username: user.username });
+    });
+});
+
+// Update profile
+app.post('/update-profile', (req, res) => {
+    const { currentUsername, newUsername, newPassword, updateType } = req.body;
+    
+    // First check if user exists
+    db.get(`SELECT * FROM users WHERE username = ?`, [currentUsername], (err, user) => {
+        if (err || !user) {
+            return res.status(400).json({ message: "User not found" });
+        }
+
+        if (updateType === 'username') {
+            // Check if new username is already taken
+            db.get(`SELECT * FROM users WHERE username = ?`, [newUsername], (err, existingUser) => {
+                if (existingUser) {
+                    return res.status(400).json({ message: "Username already taken" });
+                }
+
+                // Update username
+                db.run(`UPDATE users SET username = ? WHERE username = ?`,
+                    [newUsername, currentUsername],
+                    function(err) {
+                        if (err) {
+                            return res.status(500).json({ message: "Error updating username" });
+                        }
+                        res.json({ message: "Profile updated successfully" });
+                    });
+            });
+        } else if (updateType === 'password') {
+            // Update password
+            db.run(`UPDATE users SET password = ? WHERE username = ?`,
+                [newPassword, currentUsername],
+                function(err) {
+                    if (err) {
+                        return res.status(500).json({ message: "Error updating password" });
+                    }
+                    res.json({ message: "Profile updated successfully" });
+                });
+        } else {
+            res.status(400).json({ message: "Invalid update type" });
+        }
     });
 });
 
@@ -73,11 +126,19 @@ app.post('/delete-account', (req, res) => {
         return res.status(400).json({ message: "Username is required" });
     }
 
-    db.get(`DELETE FROM users WHERE username = ?`, [username], function(err) {
-        if (err || this.changes === 0) {
+    // First check if user exists
+    db.get(`SELECT * FROM users WHERE username = ?`, [username], (err, user) => {
+        if (err || !user) {
             return res.status(400).json({ message: "User not found" });
         }
-        res.json({ message: "User deleted successfully" });
+
+        // Delete the user
+        db.run(`DELETE FROM users WHERE username = ?`, [username], function(err) {
+            if (err) {
+                return res.status(500).json({ message: "Error deleting user" });
+            }
+            res.json({ message: "User deleted successfully" });
+        });
     });
 });
 

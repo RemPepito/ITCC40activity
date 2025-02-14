@@ -68,8 +68,7 @@
 <body>
     <div class="register-container">
         <h2>Register</h2>
-        <form action="/register" method="POST">
-            <div>
+        <form id="register-form">
             <div class="form-group">
                 <label for="username">Username:</label>
                 <input type="text" id="username" name="username" required>
@@ -90,6 +89,41 @@
         </form>
         <p>Already have an account? <a href="/login">Login here</a></p>
     </div>
-</div>
+
+    <script>
+        const form = document.getElementById('register-form');
+
+        form.addEventListener('submit', (e) => {
+            e.preventDefault();
+
+            const formData = {
+                username: document.getElementById('username').value,
+                email: document.getElementById('email').value,
+                password: document.getElementById('password').value,
+                confirm_password: document.getElementById('confirm_password').value
+            };
+
+            fetch('/register', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(formData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.message === "User registered successfully") {
+                    localStorage.setItem('username', data.username);
+                    window.location.href = '/dashboard';
+                } else {
+                    alert(data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('An error occurred during registration');
+            });
+        });
+    </script>
 </body>
 </html>
